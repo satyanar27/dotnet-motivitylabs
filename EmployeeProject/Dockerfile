@@ -1,5 +1,4 @@
 FROM bitnami/dotnet-sdk
-  WORKDIR /App
   #RUN pwd && ls -l && rm -rf ./* && ls -l
   #COPY ./EmployeeProject.csproj ./
   COPY */*.csproj ./
