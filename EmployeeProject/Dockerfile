@@ -10,12 +10,36 @@ COPY --from=build /app/build .
 RUN ls -lrth
 ENTRYPOINT ["dotnet", "EmployeeProject.dll"]
 RUN curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
-FROM python:3.7-alpine  AS deploy
-COPY ./ /usr/src/app/
-WORKDIR /usr/src/app
-RUN apk add curl openssl bash --no-cache
-RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
-    && chmod +x ./kubectl \
-    && mv ./kubectl /usr/local/bin/kubectl \
-    && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
-    && chmod +x get_helm.sh && ./get_helm.sh
+FROM alpine:3.14
+ENV VERSION v3.6.3
+WORKDIR /
+RUN apk --update add ca-certificates wget python3 curl tar jq
+ENV HOME /
+ENV PATH /google-cloud-sdk/bin:$PATH
+ENV CLOUDSDK_PYTHON_SITEPACKAGES 1
+RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.zip && unzip google-cloud-sdk.zip && rm google-cloud-sdk.zip
+RUN google-cloud-sdk/install.sh --usage-reporting=true --path-update=true --bash-completion=true --rc-path=/.bashrc --additional-components app kubectl alpha beta
+RUN google-cloud-sdk/bin/gcloud config set --installation component_manager/disable_update_check true
+ENV FILENAME helm-${VERSION}-linux-amd64.tar.gz
+ENV HELM_URL https://get.helm.sh/${FILENAME}
+RUN echo $HELM_URL
+RUN curl -o /tmp/$FILENAME ${HELM_URL} \
+  && tar -zxvf /tmp/${FILENAME} -C /tmp \
+  && mv /tmp/linux-amd64/helm /bin/helm \
+  && rm -rf /tmp
+RUN apk --update add git bash
+ENV BUILD_DEPS="gettext"  \
+    RUNTIME_DEPS="libintl"
+RUN set -x && \
+    apk add --update $RUNTIME_DEPS && \
+    apk add --virtual build_deps $BUILD_DEPS &&  \
+    cp /usr/bin/envsubst /usr/local/bin/envsubst && \
+    apk del build_deps
+ENV HELM_PLUGIN_DIR /.helm/plugins/helm-diff
+RUN mkdir /tmp
+RUN helm plugin install https://github.com/viglesiasce/helm-gcs.git
+RUN helm plugin install https://github.com/databus23/helm-diff
+RUN helm plugin install https://github.com/helm/helm-2to3
+ENV VALS_VERSION=0.14.0
+ENV VALS_URL=https://github.com/variantdev/vals/releases/download/v${VALS_VERSION}/vals_${VALS_VERSION}_linux_amd64.tar.gz
+RUN curl -sL ${VALS_URL} | tar zx -C /usr/local/bin vals
