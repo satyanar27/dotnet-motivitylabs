@@ -1,5 +1,5 @@
 FROM bitnami/dotnet-sdk:5
 WORKDIR /src
-COPY */*.csproj ./
+COPY *.csproj .
 RUN ls -lrth
 
