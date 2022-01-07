@@ -1,4 +1,4 @@
 FROM bitnami/dotnet-sdk:5
-COPY ../* ./
+COPY ./* ./
 RUN ls -lrth
 
