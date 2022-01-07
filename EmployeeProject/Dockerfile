@@ -9,7 +9,6 @@ WORKDIR /app
 COPY --from=build /app/build .
 RUN ls -lrth
 ENTRYPOINT ["dotnet", "EmployeeProject.dll"]
-RUN curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
 FROM alpine:3.14
 ENV VERSION v3.6.3
 WORKDIR /
