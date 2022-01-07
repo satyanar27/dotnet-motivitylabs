@@ -4,3 +4,4 @@ COPY *.csproj .
 RUN dotnet restore EmployeeProject.csproj
 COPY . .
 RUN ls -lrth
+RUN dotnet build EmployeeProject.csproj --configuration Release
