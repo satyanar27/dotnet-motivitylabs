@@ -8,4 +8,4 @@ FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS publish
 WORKDIR /app
 COPY --from=build /app/build .
 RUN ls -lrth
-
+ENTRYPOINT ["dotnet", "EmployeeProject.dll"]
